@@ -323,6 +323,7 @@ impl crate::consensus::encode::Encodable for Address {
 
 #[cfg(test)]
 mod tests {
+    use crate::consensus::encode::{Decodable, Encodable};
     use std::str::FromStr;
 
     use super::{base58, Address, AddressType, Network, PaymentId, PublicKey};
@@ -353,6 +354,13 @@ mod tests {
             Ok(Address::standard(Network::Mainnet, pub_spend, pub_view)),
             add
         );
+
+        let fullAddress = add.unwrap();
+        let mut encoder = Vec::new();
+        let encoded = fullAddress.clone().consensus_encode(&mut encoder).unwrap();
+        let mut res = std::io::Cursor::new(encoder);
+        let addr_decoded = Address::consensus_decode(&mut res).unwrap();
+        assert_eq!(fullAddress, addr_decoded);
     }
 
     #[test]
