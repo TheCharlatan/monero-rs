@@ -42,10 +42,12 @@ use std::str::FromStr;
 
 use base58_monero::base58;
 
+use crate::consensus::encode::{self, Decodable};
 use crate::cryptonote::hash::keccak_256;
 use crate::network::{self, Network};
 use crate::util::key::{KeyPair, PublicKey, ViewPair};
 
+use sealed::sealed;
 use thiserror::Error;
 
 /// Potential errors encountered when manipulating addresses.
@@ -302,6 +304,20 @@ mod serde_impl {
             let s = String::deserialize(deserializer)?;
             Address::from_str(&s).map_err(D::Error::custom)
         }
+    }
+}
+
+impl Decodable for Address {
+    fn consensus_decode<D: std::io::Read>(d: &mut D) -> Result<Address, encode::Error> {
+        let address: Vec<u8> = Decodable::consensus_decode(d)?;
+        Ok(Address::from_bytes(&address)?)
+    }
+}
+
+#[sealed]
+impl crate::consensus::encode::Encodable for Address {
+    fn consensus_encode<S: std::io::Write>(&self, s: &mut S) -> Result<usize, std::io::Error> {
+        Vec::from(self.as_bytes()).consensus_encode(s)
     }
 }
 
